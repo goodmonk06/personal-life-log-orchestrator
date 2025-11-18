@@ -1,0 +1,90 @@
+// Prisma Schema for Personal Life Log Orchestrator
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model LifeUser {
+  id         String   @id @default(cuid())
+  externalId String?  @unique
+  email      String?  @unique
+  name       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  eventLogs      EventLog[]
+  dailySummaries DailySummary[]
+  weeklyReviews  WeeklyReview[]
+  notes          Note[]
+
+  @@map("life_users")
+}
+
+model EventLog {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // calendar, email, expense, note, task, etc.
+  source      String   // google_calendar, gmail, manual, etc.
+  occurredAt  DateTime
+  payloadJson Json     // Flexible JSON storage for event details
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user LifeUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, occurredAt])
+  @@index([userId, type])
+  @@map("event_logs")
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime @db.Date
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user LifeUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@map("notes")
+}
+
+model DailySummary {
+  id              String   @id @default(cuid())
+  date            DateTime @db.Date
+  userId          String
+  summaryMarkdown String   @db.Text
+  moodTag         String?  // happy, neutral, sad, productive, etc.
+  highlightsJson  Json     // { goodThings: [], todoTomorrow: [] }
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user LifeUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@map("daily_summaries")
+}
+
+model WeeklyReview {
+  id              String   @id @default(cuid())
+  weekStartDate   DateTime @db.Date // Monday of the week
+  userId          String
+  summaryMarkdown String   @db.Text
+  goalsJson       Json     // { achievements: [], nextWeekGoals: [] }
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user LifeUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStartDate])
+  @@index([userId, weekStartDate])
+  @@map("weekly_reviews")
+}
