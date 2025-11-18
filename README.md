@@ -1,180 +1,339 @@
 # Personal Life Log Orchestrator
 
-あなたの「第二の脳」として機能するライフログ基盤システムです。カレンダー、タスク、メモ、支出などの情報を一元管理し、AI を活用して日次・週次のレビューを自動生成します。
+**Your second brain for personal knowledge management and life logging.**
 
-## 🌟 主な機能
+A comprehensive life logging system that consolidates calendar events, tasks, notes, and expenses into a unified platform. Leverages AI to automatically generate daily and weekly reviews, helping you reflect on your activities and plan ahead.
 
-### 1. データインポート
-- **Google Calendar 連携**: 予定を自動取得
-- **Gmail 連携**: メールログを自動取得
-- カスタムスクリプトで簡単にインポート可能
+## 📖 Overview
 
-### 2. ノート機能
-- 日付ごとにメモを記録
-- シンプルで使いやすいエディタ
-- 日次レビューの材料として活用
+Personal Life Log Orchestrator is designed to be a central hub for all your personal data:
 
-### 3. 日次サマリ（AI 生成）
-- その日の出来事を OpenAI が要約
-- 良かったこと 3 つを自動抽出
-- 明日やること 3 つを提案
-- 気分タグの自動生成
+- **Unified Event Storage**: All life events (calendar, email, tasks, notes) stored in a single, queryable format
+- **AI-Powered Insights**: Automatic summarization and reflection using OpenAI GPT-4o-mini
+- **Extensible Architecture**: Built with modern, type-safe technologies for easy expansion
+- **Privacy-First**: Self-hosted option with local data storage
 
-### 4. 週次レビュー（AI 生成）
-- 1 週間分のデータを俯瞰
-- 達成したことのハイライト
-- 課題や反省点の抽出
-- 来週の目標を提案
+## 🛠️ Tech Stack
 
-## 🛠️ 技術スタック
+### Core Technologies
+- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
+- **API Layer**: tRPC (end-to-end type safety)
+- **Database**: PostgreSQL + Prisma ORM
+- **Testing**: Vitest
+- **Containerization**: Docker + Docker Compose
 
-- **フロントエンド**: Next.js 14 (App Router) + TypeScript + Tailwind CSS
-- **API レイヤー**: tRPC
-- **データベース**: Prisma + PostgreSQL
-- **外部連携**:
-  - Google Calendar API
-  - Gmail API
-  - Google Sheets API（将来対応）
-  - OpenAI API (GPT-4o-mini)
+### Integrations
+- **Google APIs**: Calendar, Gmail
+- **OpenAI API**: GPT-4o-mini for AI summaries
+- **Future**: Google Sheets, Notion, GitHub Activity
 
-## 📦 データモデル
+## 📊 Domain Model
 
-### LifeUser
-ユーザー情報を管理
+### Core Entities
 
-### EventLog
-すべてのイベントを統一的に記録
-- type: `calendar`, `email`, `expense`, `note`, `task` など
-- source: `google_calendar`, `gmail`, `manual` など
-- payloadJson: イベントの詳細情報（柔軟な JSON 形式）
+**LifeUser**
+- User management with optional external ID for OAuth integration
+- Relations: Notes, EventLogs, DailySummaries, WeeklyReviews
 
-### Note
-日付ごとのメモ
+**EventLog** (Main entity for all life events)
+- `type`: `calendar`, `email`, `expense`, `note`, `task`, etc.
+- `source`: `google_calendar`, `gmail`, `manual`, etc.
+- `occurredAt`: When the event happened
+- `payloadJson`: Flexible JSON storage for event-specific data
 
-### DailySummary
-AI 生成の日次サマリ
-- summaryMarkdown: 要約文
-- moodTag: 気分タグ
-- highlightsJson: 良かったこと、明日やること
+**Note**
+- Date-based journaling
+- Markdown-compatible content
+- Used as input for AI summaries
 
-### WeeklyReview
-AI 生成の週次レビュー
-- summaryMarkdown: 週間要約
-- goalsJson: 達成・課題・来週の目標
+**DailySummary** (AI-generated)
+- Daily reflection and insights
+- Mood tracking
+- Highlights: good things, tomorrow's todos
 
-## 🚀 セットアップ
+**WeeklyReview** (AI-generated)
+- Weekly overview and planning
+- Achievements, challenges, next week's goals
 
-### 1. 環境変数の設定
-
-`.env.example` を `.env` にコピーして、以下の値を設定してください：
-
-```bash
-cp .env.example .env
+### Entity Relationships
+```
+LifeUser (1) ──< (N) EventLog
+LifeUser (1) ──< (N) Note
+LifeUser (1) ──< (N) DailySummary
+LifeUser (1) ──< (N) WeeklyReview
 ```
 
-```env
-# PostgreSQL データベース
-DATABASE_URL="postgresql://user:password@localhost:5432/lifelog?schema=public"
+## 🚀 Getting Started
 
-# OpenAI API キー
-OPENAI_API_KEY="sk-..."
+### Prerequisites
+- Node.js 20+
+- PostgreSQL 14+ (or use Docker Compose)
+- OpenAI API key (for AI features)
+- Google Cloud credentials (optional, for imports)
 
-# Google OAuth2 認証情報
-GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET="your-client-secret"
-GOOGLE_REDIRECT_URI="http://localhost:3000/api/auth/google/callback"
+### Quick Start with Docker
+
+1. **Clone and setup environment**
+   ```bash
+   git clone <repository-url>
+   cd personal-life-log-orchestrator
+   cp .env.example .env
+   ```
+
+2. **Edit `.env` file**
+   ```env
+   DATABASE_URL="postgresql://lifelog:lifelog_password@postgres:5432/lifelog?schema=public"
+   OPENAI_API_KEY="sk-..."
+   ```
+
+3. **Start with Docker Compose**
+   ```bash
+   docker compose up -d
+   ```
+
+4. **Run migrations and seed**
+   ```bash
+   # If running in Docker
+   docker compose exec app npx prisma migrate deploy
+   docker compose exec app npm run db:seed
+
+   # If running locally
+   npm run db:push
+   npm run db:seed
+   ```
+
+5. **Access the application**
+   - Web UI: http://localhost:3000
+   - Health check: http://localhost:3000/api/health
+   - Database: `localhost:5432`
+
+### Local Development Setup
+
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+2. **Start PostgreSQL** (if not using Docker)
+   ```bash
+   # Using Docker for PostgreSQL only
+   docker run -d \
+     --name lifelog-postgres \
+     -e POSTGRES_USER=lifelog \
+     -e POSTGRES_PASSWORD=lifelog_password \
+     -e POSTGRES_DB=lifelog \
+     -p 5432:5432 \
+     postgres:16-alpine
+   ```
+
+3. **Setup database**
+   ```bash
+   npm run db:generate  # Generate Prisma client
+   npm run db:push      # Push schema to database
+   npm run db:seed      # Seed with demo data
+   ```
+
+4. **Start development server**
+   ```bash
+   npm run dev
+   ```
+
+### Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm start` | Start production server |
+| `npm test` | Run tests with Vitest |
+| `npm run lint` | Lint code |
+| `npm run type-check` | TypeScript type checking |
+| `npm run db:generate` | Generate Prisma client |
+| `npm run db:push` | Push schema changes |
+| `npm run db:migrate` | Create and run migration |
+| `npm run db:seed` | Seed database with demo data |
+| `npm run db:studio` | Open Prisma Studio |
+| `npm run import:google` | Import from Google Calendar/Gmail |
+| `npm run docker:up` | Start Docker containers |
+| `npm run docker:down` | Stop Docker containers |
+
+## 🎯 Example Flow: Notes Feature (Vertical Slice)
+
+This is a complete end-to-end implementation demonstrating the full stack:
+
+### 1. Create a Note (POST)
+```bash
+# Demo credentials
+User ID: <auto-generated from seed>
+Email: demo@lifelog.app
 ```
 
-### 2. パッケージのインストール
+**Via UI:**
+1. Navigate to http://localhost:3000/notes
+2. Select a date
+3. Write your note content
+4. Click "Save"
 
-```bash
-npm install
+**Via tRPC (programmatically):**
+```typescript
+const note = await trpc.notes.upsert.mutate({
+  userId: 'user-id',
+  date: '2024-01-15',
+  content: 'Today I learned about tRPC and Prisma...'
+});
 ```
 
-### 3. データベースのセットアップ
+### 2. View Notes (GET)
+- **List view**: `/notes` shows recent notes
+- **Detail view**: Select a date to view specific note
+- **API**: `trpc.notes.getByDate.query({ userId, date })`
 
+### 3. Update Note (PUT)
+- Edit content and save (upserts automatically)
+
+### 4. Generate AI Summary
+- Navigate to `/daily-review`
+- Select date and click "AIで生成"
+- AI analyzes note + events → generates summary
+
+## 🧪 Testing
+
+Run the test suite:
 ```bash
-# Prisma クライアントの生成
+npm test              # Run all tests
+npm run test:watch    # Run in watch mode
+npm run test:ui       # Open Vitest UI
+```
+
+Test coverage includes:
+- Utility functions (date formatting, week calculations)
+- tRPC router logic (notes CRUD operations)
+- Domain model validations
+
+## 📥 Importing Data
+
+### Google Calendar & Gmail
+
+1. **Setup Google Cloud credentials** (see SETUP.md for detailed instructions)
+
+2. **Run import script**
+   ```bash
+   npm run import:google           # Last 7 days
+   npm run import:google -- --days=30  # Last 30 days
+   ```
+
+3. **First-time OAuth flow**
+   - Browser will open for authentication
+   - Grant required permissions
+   - Token saved to `token.json`
+
+### Demo Data
+
+The seed script creates:
+- Default user: `demo@lifelog.app`
+- 3 sample notes (today, yesterday, 2 days ago)
+- Sample event logs (calendar, email, task)
+- Sample daily summary
+- Sample weekly review
+
+## 🏗️ Architecture Decisions
+
+### Why tRPC?
+- End-to-end type safety without code generation
+- Automatic client-side type inference
+- Built-in error handling and validation
+
+### Why Prisma?
+- Type-safe database access
+- Excellent migration tooling
+- Compatible with multiple databases
+
+### Why Next.js App Router?
+- React Server Components for better performance
+- Built-in API routes
+- File-based routing
+
+## 🔮 Future Extensions
+
+### Near-term
+- [ ] Authentication with NextAuth.js
+- [ ] Export notes to Markdown files
+- [ ] Expense tracking and budgeting
+- [ ] Habit tracking
+- [ ] API rate limiting
+
+### Long-term Vision
+
+**Integration with local-first knowledge bases**
+- Sync important notes to Obsidian/Logseq
+- Offline-first architecture with sync
+- End-to-end encryption for sensitive data
+- Cross-device synchronization
+
+**Additional integrations**
+- Notion, Evernote imports
+- GitHub activity tracking
+- Fitbit/Apple Health data
+- Google Sheets for expense management
+
+**Enhanced AI features**
+- Custom prompts for summaries
+- Trend analysis and insights
+- Goal tracking and recommendations
+- Sentiment analysis over time
+
+## 🐛 Troubleshooting
+
+### Database connection issues
+```bash
+# Check if PostgreSQL is running
+docker ps | grep postgres
+
+# View database logs
+docker compose logs postgres
+
+# Reset database
+npm run db:reset
+```
+
+### Build errors
+```bash
+# Clear Next.js cache
+rm -rf .next
+
+# Regenerate Prisma client
 npm run db:generate
 
-# データベーススキーマの同期
-npm run db:push
+# Rebuild
+npm run build
 ```
 
-### 4. Google API の設定
+### OpenAI API errors
+- Verify API key is set in `.env`
+- Check account has credits
+- Review rate limits
 
-1. [Google Cloud Console](https://console.cloud.google.com/) でプロジェクトを作成
-2. Google Calendar API と Gmail API を有効化
-3. OAuth 2.0 クライアント ID を作成
-4. 認証情報をダウンロードして `credentials.json` として保存（またはスクリプトで環境変数を使用）
+## 📚 Additional Documentation
 
-### 5. 開発サーバーの起動
+- [SETUP.md](./SETUP.md) - Detailed setup instructions
+- [Prisma Schema](./prisma/schema.prisma) - Database schema
+- API documentation: http://localhost:3000/api/trpc (when running)
 
-```bash
-npm run dev
-```
+## 🤝 Contributing
 
-http://localhost:3000 にアクセスしてください。
+Contributions are welcome! This project is designed to be:
 
-## 📥 Google データのインポート
+1. **Easy to extend**: Add new event types, integrations, or AI features
+2. **Well-tested**: Maintain test coverage for new features
+3. **Type-safe**: Leverage TypeScript and Prisma for safety
+4. **Documented**: Update README and inline comments
 
-```bash
-# 過去 7 日間のデータをインポート
-npm run import:google
-
-# 日数を指定してインポート
-npm run import:google -- --days=30
-```
-
-初回実行時は Google OAuth 認証が必要です。ブラウザが開くので、アクセスを許可してください。
-
-## 📖 使い方
-
-### ノートを書く
-1. `/notes` ページにアクセス
-2. 日付を選択
-3. 自由にメモを記入
-4. 「保存」ボタンをクリック
-
-### 日次レビューを生成
-1. `/daily-review` ページにアクセス
-2. 日付を選択
-3. 「AI で生成」ボタンをクリック
-4. AI がその日の出来事を要約し、良かったことと明日やることを提案
-
-### 週次レビューを生成
-1. `/weekly-review` ページにアクセス
-2. 週の開始日（月曜日）を選択
-3. 「AI で生成」ボタンをクリック
-4. AI が 1 週間を振り返り、達成・課題・来週の目標を提案
-
-## 🔮 将来の構想
-
-### personal-knowledge-vault-local-first との連携
-
-このプロジェクトは、将来的に **local-first** のナレッジベースと連携する構想があります：
-
-- **重要なノートのローカル複製**: クラウドとローカルのハイブリッド保存
-- **Markdown ベースの知識管理**: Obsidian や Logseq との互換性
-- **オフライン対応**: ネットワークなしでもアクセス可能
-- **プライバシー重視**: 機密情報はローカルのみに保存
-
-### その他の拡張計画
-
-- **Notion, Evernote からのインポート**
-- **GitHub Activity の統合**
-- **スプレッドシートでの支出管理**
-- **ビジュアルダッシュボード（グラフ・チャート）**
-- **モバイルアプリ対応**
-
-## 🤝 貢献
-
-このプロジェクトはオープンソースです。Issue や PR を歓迎します！
-
-## 📄 ライセンス
+## 📄 License
 
 MIT License
 
 ---
 
 **Built with ❤️ for building your second brain**
+
+*Part of a larger personal knowledge management ecosystem, designed to integrate with local-first tools like Obsidian and Logseq.*
