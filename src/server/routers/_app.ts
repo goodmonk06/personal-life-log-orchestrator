@@ -4,6 +4,9 @@ import { eventLogsRouter } from './eventLogs';
 import { dailySummaryRouter } from './dailySummary';
 import { weeklyReviewRouter } from './weeklyReview';
 import { usersRouter } from './users';
+import { tagsRouter } from './tags';
+import { goalsRouter } from './goals';
+import { habitsRouter } from './habits';
 
 export const appRouter = router({
   users: usersRouter,
@@ -11,6 +14,9 @@ export const appRouter = router({
   eventLogs: eventLogsRouter,
   dailySummary: dailySummaryRouter,
   weeklyReview: weeklyReviewRouter,
+  tags: tagsRouter,
+  goals: goalsRouter,
+  habits: habitsRouter,
 });
 
 export type AppRouter = typeof appRouter;
